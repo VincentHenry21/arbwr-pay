@@ -189,7 +189,7 @@
       <div id="colorRow" class="flex gap-3 mt-2 mb-4 justify-center"></div>
       <label class="text-xs font-bold text-pink-900/60">BIO (OPTIONAL)</label>
       <input id="profileBio" class="field mt-1" maxlength="80" placeholder="A line about you...">
-      <button onclick="saveProfile()" class="btn-primary w-full py-3.5 mt-5 text-[15px]">Save profile</button>
+      <button id="saveProfileBtn" onclick="saveProfile()" class="btn-primary w-full py-3.5 mt-5 text-[15px]">Save profile</button>
     </div>
   </section>
 
@@ -398,7 +398,8 @@ function genCode(){
 }
 async function createRoom(){
   const code = genCode();
-  await S.adapter.ensureRoom(code);
+  try{ await S.adapter.ensureRoom(code); }
+  catch(e){ toast('Could not create a code: ' + (e && e.message ? e.message : e)); return; }
   $('#createdCode').textContent = code;
   $('#createdCodeWrap').classList.remove('hidden');
 }
@@ -411,14 +412,18 @@ async function joinRoom(){
   const code = $('#joinCodeInput').value.trim().toUpperCase();
   const err = $('#joinError'); err.classList.add('hidden');
   if(code.length!==6){ err.textContent='Enter the 6-character code.'; err.classList.remove('hidden'); return; }
-  const ok = await S.adapter.roomExists(code);
+  let ok = false;
+  try{ ok = await S.adapter.roomExists(code); }
+  catch(e){ err.textContent='Could not check the code: ' + (e && e.message ? e.message : e); err.classList.remove('hidden'); return; }
   if(!ok){ err.textContent='No couple found with that code. Check it and try again.'; err.classList.remove('hidden'); return; }
   enterRoom(code);
 }
 async function enterRoom(code, silent){
-  S.roomCode = code;
-  localStorage.setItem('arbwr_room_code', code);
-  await S.adapter.ensureRoom(code);
+  try{
+    S.roomCode = code;
+    localStorage.setItem('arbwr_room_code', code);
+    await S.adapter.ensureRoom(code);
+  }catch(e){ toast('Could not open the room: ' + (e && e.message ? e.message : e)); return; }
   const map = JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
   S.profileId = map[code] || null;
   S.adapter.subscribe(room => { S.room = room; renderApp(); });
@@ -445,16 +450,24 @@ function updatePreview(){
 async function saveProfile(){
   const name = $('#profileName').value.trim();
   if(!name){ toast('Give yourself a name first'); return; }
-  const bio = $('#profileBio').value.trim();
-  const pid = S.profileId || S.adapter.key();
-  await S.adapter.write(room => {
-    room.profiles[pid] = { name, color: pickedColor, bio, createdAt: Date.now() };
-  });
-  S.profileId = pid;
-  const map = JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
-  map[S.roomCode]=pid; localStorage.setItem('arbwr_profile_map', JSON.stringify(map));
-  showView('view-app'); switchTab('home');
-  toast('Welcome, '+name);
+  const btn = $('#saveProfileBtn');
+  btn.disabled = true; const oldLabel = btn.textContent; btn.textContent = 'Saving…';
+  try{
+    const bio = $('#profileBio').value.trim();
+    const pid = S.profileId || S.adapter.key();
+    await S.adapter.write(room => {
+      room.profiles = room.profiles || {};
+      room.profiles[pid] = { name, color: pickedColor, bio, createdAt: Date.now() };
+    });
+    S.profileId = pid;
+    const map = JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
+    map[S.roomCode]=pid; localStorage.setItem('arbwr_profile_map', JSON.stringify(map));
+    showView('view-app'); switchTab('home');
+    toast('Welcome, '+name);
+  }catch(e){
+    toast('Could not save: ' + (e && e.message ? e.message : e));
+  }
+  btn.disabled = false; btn.textContent = oldLabel;
 }
 
 /* ---------------- Tabs ---------------- */
