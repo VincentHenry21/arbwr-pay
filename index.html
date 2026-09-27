@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Arbwr Pay</title>
+<meta name="theme-color" content="#ff6b9d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arbwr Pay">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff6b9d'/%3E%3Cstop offset='1' stop-color='%23c86dd7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 46S16 36 16 25c0-6 4.5-10 10-10 4 0 7 2.5 8.2 5.6h3.6C39 17.5 42 15 46 15c5.5 0 10 4 10 10 0 11-16 21-16 21l-8 0z' fill='white' transform='scale(0.9) translate(3.5,3.5)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  * { font-family: 'Montserrat', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior-y: none; }
+  body {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 40%, #fbc2eb 70%, #a18cd1 100%);
+    background-attachment: fixed;
+    min-height: 100dvh;
+    color: #4a2040;
+  }
+  body::before {
+    content:''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(600px 400px at 15% 10%, rgba(255,255,255,.35), transparent 60%),
+      radial-gradient(500px 500px at 85% 85%, rgba(200,109,215,.25), transparent 60%),
+      radial-gradient(400px 300px at 70% 20%, rgba(255,107,157,.20), transparent 60%);
+  }
+  #app { position: relative; z-index: 1; }
+  .glass {
+    background: rgba(255,255,255,.28);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,.55);
+    box-shadow: 0 8px 32px rgba(200,109,215,.18), inset 0 1px 0 rgba(255,255,255,.6);
+    border-radius: 24px;
+  }
+  .glass-deep {
+    background: rgba(255,255,255,.16);
+    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(1.6);
+    border: 1px solid rgba(255,255,255,.45);
+    box-shadow: 0 12px 40px rgba(200,109,215,.22), inset 0 1px 0 rgba(255,255,255,.5);
+    border-radius: 24px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #ff6b9d, #c86dd7);
+    color: white; font-weight: 700;
+    box-shadow: 0 8px 24px rgba(255,107,157,.45), inset 0 1px 0 rgba(255,255,255,.4);
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 18px;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .btn-primary:active { transform: scale(.96); box-shadow: 0 4px 12px rgba(255,107,157,.4); }
+  .btn-ghost {
+    background: rgba(255,255,255,.35);
+    border: 1px solid rgba(255,255,255,.6);
+    border-radius: 18px; font-weight: 600; color: #7a2f5c;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: transform .12s ease;
+  }
+  .btn-ghost:active { transform: scale(.96); }
+  .field {
+    background: rgba(255,255,255,.45);
+    border: 1px solid rgba(255,255,255,.65);
+    border-radius: 16px; padding: 12px 16px; width: 100%;
+    outline: none; color: #4a2040; font-weight: 500;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .field:focus { border-color: #ff6b9d; box-shadow: 0 0 0 3px rgba(255,107,157,.2); }
+  .field::placeholder { color: #a4769a; }
+  textarea.field { resize: none; }
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(255,255,255,.35);
+    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(1.6);
+    border-top: 1px solid rgba(255,255,255,.55);
+    box-shadow: 0 -8px 32px rgba(200,109,215,.15);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab-btn { display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 0 8px; color:#9a5b84; font-size:10px; font-weight:600; letter-spacing:.02em; flex:1; border-radius:16px; transition: all .15s ease; }
+  .tab-btn svg { width:24px; height:24px; }
+  .tab-btn.active { color:#e0447c; }
+  .tab-btn.active svg { filter: drop-shadow(0 2px 6px rgba(255,107,157,.5)); transform: scale(1.08); }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:600; background:rgba(255,255,255,.4); border:1px solid rgba(255,255,255,.6); color:#7a2f5c; }
+  .avatar-ring { border: 3px solid rgba(255,255,255,.7); box-shadow: 0 4px 16px rgba(200,109,215,.3); }
+  .fade-in { animation: fadeUp .35s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform:none;} }
+  .pop { animation: pop .3s ease both; }
+  @keyframes pop { 0%{transform:scale(.6);opacity:0} 60%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+  .heart-beat { animation: heartbeat 1.2s ease-in-out infinite; transform-origin:center; }
+  @keyframes heartbeat { 0%,100%{transform:scale(1)} 25%{transform:scale(1.12)} 40%{transform:scale(1)} 60%{transform:scale(1.1)} }
+  .float-slow { animation: floaty 7s ease-in-out infinite; }
+  @keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .opt-btn { transition: all .15s ease; }
+  .opt-btn.picked { background: linear-gradient(135deg,#ff6b9d,#c86dd7); color:#fff; border-color: transparent; }
+  .opt-btn.correct { background: linear-gradient(135deg,#34d399,#10b981); color:#fff; border-color: transparent; }
+  .opt-btn.wrong { background: linear-gradient(135deg,#f87171,#ef4444); color:#fff; border-color: transparent; }
+  ::-webkit-scrollbar { width:0; height:0; }
+  .sheet { border-radius: 28px 28px 0 0; }
+  .divider { height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); }
+  .num-badge { background: linear-gradient(135deg,#ff6b9d,#c86dd7); color:#fff; font-weight:800; border-radius:999px; min-width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; padding:0 8px; font-size:13px; box-shadow:0 4px 12px rgba(255,107,157,.4); }
+  .streak-flame { filter: drop-shadow(0 6px 18px rgba(255,120,60,.55)); }
+  input[type="date"], input[type="text"], input[type="number"] { font-size:16px; }
+</style>
+</head>
+<body>
+<div id="app" class="max-w-md mx-auto min-h-dvh pb-32">
+
+  <!-- ============ VIEW: SETUP (firebase config) ============ -->
+  <section id="view-setup" class="hidden px-5 pt-14">
+    <div class="text-center mb-6 fade-in">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl glass-deep mb-4 float-slow">
+        <svg viewBox="0 0 24 24" class="w-10 h-10" fill="url(#logoGrad)"><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6b9d"/><stop offset="1" stop-color="#c86dd7"/></linearGradient></defs><path d="M12 21s-7.5-4.9-9.7-9.2C.7 8.6 2.6 5 6 5c2 0 3.4 1.1 4.2 2.3h3.6C14.6 6.1 16 5 18 5c3.4 0 5.3 3.6 3.7 6.8C19.5 16.1 12 21 12 21z" transform="scale(.92) translate(1,0)"/></svg>
+      </div>
+      <h1 class="text-3xl font-extrabold text-white drop-shadow-lg tracking-tight">Arbwr Pay</h1>
+      <p class="text-pink-900/70 font-medium mt-1 text-sm">the couple's currency of affection</p>
+    </div>
+    <div class="glass p-5 fade-in">
+      <h2 class="font-bold text-lg mb-1">Connect your cloud</h2>
+      <p class="text-sm text-pink-900/70 mb-4">Paste your Firebase web config below so you and your partner stay in sync. <button class="underline font-semibold text-pink-600" onclick="toggleSetupHelp()">How do I get this?</button></p>
+      <div id="setupHelp" class="hidden text-xs text-pink-900/80 bg-white/40 rounded-2xl p-4 mb-4 space-y-2 border border-white/60">
+        <p><b>1.</b> Go to <b>console.firebase.google.com</b> and create a project called <b>Arbwr Pay</b>.</p>
+        <p><b>2.</b> In <b>Build → Realtime Database</b>, click <b>Create Database</b> → start in <b>test mode</b>.</p>
+        <p><b>3.</b> In <b>Build → Authentication → Sign-in method</b>, enable <b>Anonymous</b>.</p>
+        <p><b>4.</b> Open <b>Project settings (gear) → Your apps → Web app (&lt;/&gt;)</b>, register the app, and copy the <b>firebaseConfig</b> object.</p>
+        <p><b>5.</b> Paste it below and tap Connect.</p>
+      </div>
+      <textarea id="firebaseConfigInput" class="field font-mono text-xs" rows="7" placeholder='Paste your firebaseConfig JSON here, e.g. {"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"..."}'></textarea>
+      <p id="setupError" class="hidden text-xs font-semibold text-red-600 mt-2"></p>
+      <button onclick="connectFirebase()" class="btn-primary w-full py-3.5 mt-4 text-[15px]">Connect & Continue</button>
+      <div class="divider my-4"></div>
+      <button onclick="useDemoMode()" class="btn-ghost w-full py-3 text-sm">Try demo mode on this phone only</button>
+      <p class="text-[11px] text-pink-900/60 mt-3 text-center">Demo mode keeps everything on this device. Connect Firebase to sync with your partner.</p>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: LINK ============ -->
+  <section id="view-link" class="hidden px-5 pt-14">
+    <div class="text-center mb-6 fade-in">
+      <h1 class="text-2xl font-extrabold text-white drop-shadow-lg">Link your partner</h1>
+      <p class="text-pink-900/70 font-medium mt-1 text-sm" id="linkModeNote">Create a code and share it, or join with theirs.</p>
+    </div>
+    <div class="glass p-5 mb-4 fade-in">
+      <h2 class="font-bold mb-2">Create a couple code</h2>
+      <p class="text-sm text-pink-900/70 mb-4">Generate a code and send it to your partner.</p>
+      <button onclick="createRoom()" class="btn-primary w-full py-3.5 text-[15px]">Generate my code</button>
+      <div id="createdCodeWrap" class="hidden mt-4 text-center">
+        <p class="text-xs font-semibold text-pink-900/60 mb-1">YOUR COUPLE CODE</p>
+        <div class="flex items-center justify-center gap-2">
+          <span id="createdCode" class="text-3xl font-extrabold tracking-[.3em] text-pink-600"></span>
+          <button onclick="copyCode()" class="btn-ghost px-3 py-2 text-xs">Copy</button>
+        </div>
+        <button onclick="enterRoom(document.getElementById('createdCode').textContent)" class="btn-ghost w-full py-3 mt-4 text-sm">Continue →</button>
+      </div>
+    </div>
+    <div class="glass p-5 fade-in">
+      <h2 class="font-bold mb-2">Join with a code</h2>
+      <div class="flex gap-2">
+        <input id="joinCodeInput" class="field uppercase tracking-[.25em] text-center font-bold" maxlength="6" placeholder="ABC123">
+        <button onclick="joinRoom()" class="btn-primary px-6">Join</button>
+      </div>
+      <p id="joinError" class="hidden text-xs font-semibold text-red-600 mt-2"></p>
+    </div>
+    <button onclick="backToSetup()" class="w-full text-center text-xs font-semibold text-pink-900/60 mt-6 underline">Change connection</button>
+  </section>
+
+  <!-- ============ VIEW: PROFILE SETUP ============ -->
+  <section id="view-profile" class="hidden px-5 pt-14">
+    <div class="text-center mb-6 fade-in">
+      <h1 class="text-2xl font-extrabold text-white drop-shadow-lg">Who are you?</h1>
+      <p class="text-pink-900/70 font-medium mt-1 text-sm">Set up your profile for this couple.</p>
+    </div>
+    <div class="glass p-5 fade-in">
+      <div class="flex justify-center mb-4">
+        <div id="profilePreview" class="avatar-ring w-20 h-20 rounded-full flex items-center justify-center text-3xl font-extrabold text-white" style="background:linear-gradient(135deg,#ff6b9d,#c86dd7)">?</div>
+      </div>
+      <label class="text-xs font-bold text-pink-900/60">YOUR NAME</label>
+      <input id="profileName" class="field mt-1 mb-4" maxlength="24" placeholder="e.g. Thit Sar" oninput="updatePreview()">
+      <label class="text-xs font-bold text-pink-900/60">PICK YOUR COLOR</label>
+      <div id="colorRow" class="flex gap-3 mt-2 mb-4 justify-center"></div>
+      <label class="text-xs font-bold text-pink-900/60">BIO (OPTIONAL)</label>
+      <input id="profileBio" class="field mt-1" maxlength="80" placeholder="A line about you...">
+      <button onclick="saveProfile()" class="btn-primary w-full py-3.5 mt-5 text-[15px]">Save profile</button>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: APP ============ -->
+  <section id="view-app" class="hidden">
+    <header class="px-5 pt-12 pb-2 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-extrabold text-white drop-shadow tracking-tight">Arbwr Pay</h1>
+        <p id="headerCode" class="text-[11px] font-bold text-pink-900/60 tracking-widest"></p>
+      </div>
+      <div id="headerAvatars" class="flex -space-x-3"></div>
+    </header>
+    <main id="tabContent" class="px-5 pt-2"></main>
+    <nav class="tabbar">
+      <div class="max-w-md mx-auto flex px-2">
+        <button class="tab-btn" data-tab="home" onclick="switchTab('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="tab-btn" data-tab="kisses" onclick="switchTab('kisses')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.7-9.5-9C1 8.5 3 5.5 6.5 5.5c2 0 3.5 1 4.3 2.4h2.4c.8-1.4 2.3-2.4 4.3-2.4 3.5 0 5.5 3 4 6.5-2 4.3-9.5 9-9.5 9z"/></svg>
+          <span>Kisses</span>
+        </button>
+        <button class="tab-btn" data-tab="quiz" onclick="switchTab('quiz')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a2.8 2.8 0 0 1 5.5.8c0 1.8-2.7 2.3-2.7 3.7"/><circle cx="12" cy="17.5" r=".5" fill="currentColor"/></svg>
+          <span>Quiz</span>
+        </button>
+        <button class="tab-btn" data-tab="invoices" onclick="switchTab('invoices')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6"/></svg>
+          <span>Invoices</span>
+        </button>
+        <button class="tab-btn" data-tab="profile" onclick="switchTab('profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+          <span>Profile</span>
+        </button>
+      </div>
+    </nav>
+  </section>
+
+  <!-- ============ MODAL ============ -->
+  <div id="modal" class="hidden fixed inset-0 z-[60] flex items-end justify-center bg-black/30 backdrop-blur-sm" onclick="if(event.target===this)closeModal()">
+    <div class="sheet glass-deep w-full max-w-md p-6 pb-10 pop max-h-[85dvh] overflow-y-auto" id="modalBody"></div>
+  </div>
+
+  <!-- ============ TOAST ============ -->
+  <div id="toast" class="hidden fixed top-14 left-1/2 -translate-x-1/2 z-[70] glass px-5 py-3 text-sm font-bold text-pink-900 pop"></div>
+</div>
+<script>
+window.FIREBASE_PRESET = {"apiKey":"AIzaSyBOS6A_nU1Rkbpu0Ia1kKQWvK2WV24GZ7E","authDomain":"arbwr-pay.firebaseapp.com","databaseURL":"https://arbwr-pay-default-rtdb.firebaseio.com","projectId":"arbwr-pay","storageBucket":"arbwr-pay.firebasestorage.app","messagingSenderId":"815589145593","appId":"1:815589145593:web:278c47e957fa4b56949b28"};
+</script>
+<script>
+/* =====================================================================
+   ARBWR PAY — couple's affection app
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr = () => new Date().toISOString().slice(0,10);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const timeAgo = ts => {
+  const m = Math.floor((Date.now()-ts)/60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m+'m ago';
+  const h = Math.floor(m/60); if (h < 24) return h+'h ago';
+  return Math.floor(h/24)+'d ago';
+};
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.remove('hidden'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add('hidden'),2200); }
+function openModal(html){ $('#modalBody').innerHTML=html; $('#modal').classList.remove('hidden'); }
+function closeModal(){ $('#modal').classList.add('hidden'); }
+
+const COLORS = [
+  ['#ff6b9d','#c86dd7'], ['#f857a6','#ff5858'], ['#a18cd1','#fbc2eb'],
+  ['#ff9a9e','#fecfef'], ['#667eea','#764ba2'], ['#43cea2','#185a9d'],
+];
+let pickedColor = 0;
+
+/* ---------------- Storage adapters ---------------- */
+const LocalAdapter = {
+  mode:'demo', _data:null, _cb:null, _code:null,
+  key(){ return uid(); },
+  async ensureRoom(code){
+    this._code = code;
+    try { this._data = JSON.parse(localStorage.getItem('arbwr_room_'+code)) || null; } catch(e){ this._data=null; }
+    if(!this._data){ this._data = { profiles:{}, kisses:{}, checkins:{}, quizzes:{}, invoices:{}, createdAt: Date.now() }; this._save(); }
+    return true;
+  },
+  async roomExists(code){
+    try { return !!localStorage.getItem('arbwr_room_'+code); } catch(e){ return false; }
+  },
+  _save(){ try{ localStorage.setItem('arbwr_room_'+this._code, JSON.stringify(this._data)); }catch(e){} },
+  async write(fn){ fn(this._data); this._save(); this._cb && this._cb(this._data); },
+  subscribe(cb){ this._cb = cb; cb(this._data); },
+};
+const FirebaseAdapter = {
+  mode:'firebase', _ref:null, _cb:null, db:null,
+  key(){ return this.db.ref().push().key; },
+  async ensureRoom(code){
+    const ref = this.db.ref('rooms/'+code);
+    const snap = await ref.get();
+    if(!snap.exists()){ await ref.set({ profiles:{}, kisses:{}, checkins:{}, quizzes:{}, invoices:{}, createdAt: Date.now() }); }
+    this._ref = ref; return true;
+  },
+  async roomExists(code){ const s = await this.db.ref('rooms/'+code).get(); return s.exists(); },
+  async write(fn){
+    const snap = await this._ref.get();
+    const data = snap.val() || { profiles:{}, kisses:{}, checkins:{}, quizzes:{}, invoices:{} };
+    fn(data);
+    await this._ref.set(data);
+  },
+  subscribe(cb){ this._cb=cb; this._ref.on('value', s => cb(s.val() || { profiles:{}, kisses:{}, checkins:{}, quizzes:{}, invoices:{} })); },
+};
+
+/* ---------------- App state ---------------- */
+const S = {
+  adapter:null, roomCode:null, profileId:null,
+  room:{ profiles:{}, kisses:{}, checkins:{}, quizzes:{}, invoices:{} },
+  tab:'home',
+};
+function showView(id){
+  ['view-setup','view-link','view-profile','view-app'].forEach(v => $('#'+v).classList.toggle('hidden', v!==id));
+  window.scrollTo(0,0);
+}
+function myProfile(){ return (S.room.profiles||{})[S.profileId] || {name:'You', color:0}; }
+function partnerProfile(){
+  const ps = S.room.profiles||{};
+  const ids = Object.keys(ps).filter(id=>id!==S.profileId);
+  return ids.length ? {id:ids[0], ...ps[ids[0]]} : null;
+}
+function avatarHTML(p, size){
+  const c = COLORS[(p.color||0)%COLORS.length];
+  const initial = esc((p.name||'?').trim().charAt(0).toUpperCase());
+  return `<div class="avatar-ring rounded-full flex items-center justify-center font-extrabold text-white shrink-0" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.42)}px;background:linear-gradient(135deg,${c[0]},${c[1]})">${initial}</div>`;
+}
+
+/* ---------------- Setup ---------------- */
+function toggleSetupHelp(){ $('#setupHelp').classList.toggle('hidden'); }
+function backToSetup(){ localStorage.removeItem('arbwr_fb_config'); localStorage.removeItem('arbwr_mode'); showView('view-setup'); }
+async function connectFirebase(){
+  const raw = $('#firebaseConfigInput').value.trim();
+  const err = $('#setupError');
+  err.classList.add('hidden');
+  let cfg;
+  try {
+    let cleaned = raw.replace(/^\s*(const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '');
+    cfg = JSON.parse(cleaned);
+  } catch(e){ err.textContent='That does not look like valid JSON. Copy the firebaseConfig object from your Firebase project settings.'; err.classList.remove('hidden'); return; }
+  if(!cfg.apiKey || !cfg.databaseURL || !cfg.projectId){
+    err.textContent='Config is missing apiKey, databaseURL or projectId. Make sure you copied the full web config.'; err.classList.remove('hidden'); return;
+  }
+  try{
+    if(firebase.apps.length) await firebase.app().delete();
+    firebase.initializeApp(cfg);
+    await firebase.auth().signInAnonymously();
+    FirebaseAdapter.db = firebase.database();
+  }catch(e){
+    err.textContent='Could not connect: '+(e.message||e); err.classList.remove('hidden'); return;
+  }
+  localStorage.setItem('arbwr_fb_config', JSON.stringify(cfg));
+  localStorage.setItem('arbwr_mode','firebase');
+  S.adapter = FirebaseAdapter;
+  toast('Connected to your cloud');
+  showView('view-link');
+}
+function useDemoMode(){
+  localStorage.setItem('arbwr_mode','demo');
+  localStorage.removeItem('arbwr_fb_config');
+  S.adapter = LocalAdapter;
+  $('#linkModeNote').textContent = 'Demo mode: everything stays on this phone only.';
+  showView('view-link');
+}
+async function boot(){
+  if(window.FIREBASE_PRESET && !localStorage.getItem('arbwr_mode')){
+    $('#firebaseConfigInput').value = JSON.stringify(window.FIREBASE_PRESET);
+    await connectFirebase();
+    return;
+  }
+  const mode = localStorage.getItem('arbwr_mode');
+  if(mode==='firebase'){
+    try{
+      const cfg = JSON.parse(localStorage.getItem('arbwr_fb_config'));
+      firebase.initializeApp(cfg);
+      await firebase.auth().signInAnonymously();
+      FirebaseAdapter.db = firebase.database();
+      S.adapter = FirebaseAdapter;
+    }catch(e){ showView('view-setup'); return; }
+  } else if(mode==='demo'){
+    S.adapter = LocalAdapter;
+    $('#linkModeNote').textContent = 'Demo mode: everything stays on this phone only.';
+  } else { showView('view-setup'); return; }
+  const savedRoom = localStorage.getItem('arbwr_room_code');
+  if(savedRoom){ enterRoom(savedRoom, true); }
+  else showView('view-link');
+}
+
+/* ---------------- Linking ---------------- */
+function genCode(){
+  const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let c=''; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+async function createRoom(){
+  const code = genCode();
+  await S.adapter.ensureRoom(code);
+  $('#createdCode').textContent = code;
+  $('#createdCodeWrap').classList.remove('hidden');
+}
+function copyCode(){
+  const c = $('#createdCode').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(c).then(()=>toast('Code copied — send it to your partner'));
+  else toast('Code: '+c);
+}
+async function joinRoom(){
+  const code = $('#joinCodeInput').value.trim().toUpperCase();
+  const err = $('#joinError'); err.classList.add('hidden');
+  if(code.length!==6){ err.textContent='Enter the 6-character code.'; err.classList.remove('hidden'); return; }
+  const ok = await S.adapter.roomExists(code);
+  if(!ok){ err.textContent='No couple found with that code. Check it and try again.'; err.classList.remove('hidden'); return; }
+  enterRoom(code);
+}
+async function enterRoom(code, silent){
+  S.roomCode = code;
+  localStorage.setItem('arbwr_room_code', code);
+  await S.adapter.ensureRoom(code);
+  const map = JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
+  S.profileId = map[code] || null;
+  S.adapter.subscribe(room => { S.room = room; renderApp(); });
+  if(S.profileId && S.room.profiles && S.room.profiles[S.profileId]){ showView('view-app'); switchTab('home'); }
+  else { buildColorRow(); showView('view-profile'); }
+  if(!silent) $('#headerCode').textContent = 'COUPLE CODE · '+code;
+  $('#headerCode').textContent = 'COUPLE CODE · '+code;
+}
+
+/* ---------------- Profile setup ---------------- */
+function buildColorRow(){
+  $('#colorRow').innerHTML = COLORS.map((c,i)=>
+    `<button onclick="pickColor(${i})" data-i="${i}" class="color-dot w-11 h-11 rounded-full border-4 transition-all" style="background:linear-gradient(135deg,${c[0]},${c[1]});border-color:${i===pickedColor?'#fff':'transparent'};box-shadow:${i===pickedColor?'0 0 0 3px #ff6b9d':'none'}"></button>`
+  ).join('');
+}
+function pickColor(i){ pickedColor=i; buildColorRow(); updatePreview(); }
+function updatePreview(){
+  const name = $('#profileName').value.trim() || '?';
+  const c = COLORS[pickedColor];
+  const pv = $('#profilePreview');
+  pv.textContent = name.charAt(0).toUpperCase();
+  pv.style.background = `linear-gradient(135deg,${c[0]},${c[1]})`;
+}
+async function saveProfile(){
+  const name = $('#profileName').value.trim();
+  if(!name){ toast('Give yourself a name first'); return; }
+  const bio = $('#profileBio').value.trim();
+  const pid = S.profileId || S.adapter.key();
+  await S.adapter.write(room => {
+    room.profiles[pid] = { name, color: pickedColor, bio, createdAt: Date.now() };
+  });
+  S.profileId = pid;
+  const map = JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
+  map[S.roomCode]=pid; localStorage.setItem('arbwr_profile_map', JSON.stringify(map));
+  showView('view-app'); switchTab('home');
+  toast('Welcome, '+name);
+}
+
+/* ---------------- Tabs ---------------- */
+function switchTab(t){
+  S.tab=t;
+  $$('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  renderApp();
+}
+function streakInfo(){
+  const checkins = S.room.checkins||{};
+  const pids = Object.keys(S.room.profiles||{});
+  if(pids.length===0) return {count:0, checkedToday:false};
+  let count=0;
+  const d = new Date();
+  const checkedToday = !!(checkins[todayStr()] && pids.every(p=>checkins[todayStr()][p]));
+  if(!checkedToday) d.setDate(d.getDate()-1);
+  while(true){
+    const ds = d.toISOString().slice(0,10);
+    const day = checkins[ds];
+    if(day && pids.every(p=>day[p])){ count++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return {count, checkedToday};
+}
+async function checkIn(){
+  const t = todayStr();
+  await S.adapter.write(room=>{
+    room.checkins[t]=room.checkins[t]||{};
+    room.checkins[t][S.profileId]=true;
+  });
+  toast('Checked in for today');
+}
+
+/* ---------------- Render ---------------- */
+function renderApp(){
+  if($('#view-app').classList.contains('hidden')) return;
+  $('#headerCode').textContent = 'COUPLE CODE · '+S.roomCode + (S.adapter.mode==='demo' ? ' · DEMO' : '');
+  const ps = Object.values(S.room.profiles||{});
+  $('#headerAvatars').innerHTML = ps.slice(0,2).map(p=>avatarHTML(p,36)).join('');
+  const c = $('#tabContent');
+  if(S.tab==='home') c.innerHTML = viewHome();
+  else if(S.tab==='kisses') c.innerHTML = viewKisses();
+  else if(S.tab==='quiz') c.innerHTML = viewQuiz();
+  else if(S.tab==='invoices') c.innerHTML = viewInvoices();
+  else if(S.tab==='profile') c.innerHTML = viewProfile();
+}
+function sectionTitle(t, sub){
+  return `<div class="mb-4 fade-in"><h2 class="text-xl font-extrabold text-white drop-shadow">${t}</h2>${sub?`<p class="text-pink-900/70 text-sm font-medium">${sub}</p>`:''}</div>`;
+}
+
+function viewHome(){
+  const st = streakInfo();
+  const partner = partnerProfile();
+  const me = myProfile();
+  const kissCount = Object.keys(S.room.kisses||{}).length;
+  const openInvoices = Object.values(S.room.invoices||{}).filter(i=>i.status==='open').length;
+  return `
+  ${sectionTitle('Good to see you, '+esc(me.name.split(' ')[0]))}
+  <div class="glass-deep p-6 text-center mb-4 fade-in">
+    <svg viewBox="0 0 24 24" class="w-16 h-16 mx-auto streak-flame heart-beat" fill="none">
+      <path d="M12 22c4.4 0 8-3.6 8-8 0-5-4.5-7.5-6-10-.5 1.5-1.5 2.5-3 3 .5-2.5-.5-5-2.5-6.5C7 3 5 6 5 10c-1 1-2 2.7-2 4 0 4.4 4.6 8 9 8z" fill="url(#flameG)"/>
+      <defs><linearGradient id="flameG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#ff5e62"/></linearGradient></defs>
+    </svg>
+    <div class="text-5xl font-extrabold text-white drop-shadow mt-2">${st.count}</div>
+    <div class="text-sm font-bold text-pink-900/70 tracking-wide">DAY STREAK</div>
+    <div class="flex justify-center gap-2 mt-4">
+      ${Object.entries(S.room.profiles||{}).map(([id,p])=>`
+        <span class="chip">${((S.room.checkins||{})[todayStr()]||{})[id] ? '✓ ' : '○ '}${esc(p.name.split(' ')[0])}</span>`).join('')}
+    </div>
+    ${st.checkedToday
+      ? `<p class="text-sm font-semibold text-pink-700 mt-4">You're checked in for today.</p>`
+      : `<button onclick="checkIn()" class="btn-primary w-full py-3.5 mt-4">Check in for today</button>`}
+  </div>
+  <div class="grid grid-cols-3 gap-3 mb-4 fade-in">
+    <div class="glass p-4 text-center"><div class="text-2xl font-extrabold text-pink-600">${kissCount}</div><div class="text-[11px] font-bold text-pink-900/60">KISSES</div></div>
+    <div class="glass p-4 text-center"><div class="text-2xl font-extrabold text-pink-600">${Object.keys(S.room.quizzes||{}).length}</div><div class="text-[11px] font-bold text-pink-900/60">QUIZZES</div></div>
+    <div class="glass p-4 text-center"><div class="text-2xl font-extrabold text-pink-600">${openInvoices}</div><div class="text-[11px] font-bold text-pink-900/60">OPEN BILLS</div></div>
+  </div>
+  ${partner ? `
+  <div class="glass p-4 flex items-center gap-3 fade-in">
+    ${avatarHTML({name:partner.name, color:partner.color},48)}
+    <div class="flex-1">
+      <div class="font-bold text-[15px]">${esc(partner.name)}</div>
+      <div class="text-xs text-pink-900/60 font-medium">${esc(partner.bio||'Your partner in crime')}</div>
+    </div>
+    <button onclick="quickKiss()" class="btn-primary px-4 py-2.5 text-sm">Send kiss</button>
+  </div>` : `
+  <div class="glass p-5 text-center fade-in">
+    <p class="text-sm font-semibold text-pink-900/70 mb-3">Share your couple code so your partner can join:</p>
+    <div class="flex items-center justify-center gap-2">
+      <span class="text-2xl font-extrabold tracking-[.25em] text-pink-600">${S.roomCode}</span>
+      <button onclick="copyRoomCode()" class="btn-ghost px-3 py-2 text-xs">Copy</button>
+    </div>
+  </div>`}`;
+}
+function copyRoomCode(){
+  if(navigator.clipboard) navigator.clipboard.writeText(S.roomCode).then(()=>toast('Code copied'));
+  else toast('Code: '+S.roomCode);
+}
+
+const KISS_TYPES = [
+  {id:'kiss', label:'Kiss', svg:'<path d="M12 21s-7.5-4.7-9.5-9C1 8.5 3 5.5 6.5 5.5c2 0 3.5 1 4.3 2.4h2.4c.8-1.4 2.3-2.4 4.3-2.4 3.5 0 5.5 3 4 6.5-2 4.3-9.5 9-9.5 9z"/>'},
+  {id:'hug', label:'Hug', svg:'<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3.5 2.7-6 6-6h8c3.3 0 6 2.5 6 6"/>'},
+  {id:'date', label:'Date', svg:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>'},
+  {id:'favor', label:'Favor', svg:'<path d="M12 2l2.6 6.2 6.7.5-5.1 4.4 1.6 6.5L12 16l-5.8 3.6 1.6-6.5L2.7 8.7l6.7-.5z"/>'},
+];
+function viewKisses(){
+  const list = Object.entries(S.room.kisses||{}).sort((a,b)=>b[1].at-a[1].at);
+  return `
+  ${sectionTitle('Kisses','Send a little something to your partner.')}
+  <div class="glass p-4 mb-4 fade-in">
+    <div class="grid grid-cols-4 gap-2 mb-3" id="kissTypeRow">
+      ${KISS_TYPES.map((t,i)=>`
+        <button onclick="pickKissType('${t.id}')" data-kt="${t.id}" class="kt-btn btn-ghost py-3 flex flex-col items-center gap-1 ${i===0?'!bg-pink-500 !text-white !border-transparent':''}">
+          <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>
+          <span class="text-[10px] font-bold">${t.label}</span>
+        </button>`).join('')}
+    </div>
+    <input id="kissNote" class="field mb-3" maxlength="60" placeholder="Add a note (optional)...">
+    <button onclick="sendKiss()" class="btn-primary w-full py-3.5">Send it with love</button>
+  </div>
+  <div class="space-y-3">
+    ${list.length===0 ? `<div class="glass p-6 text-center text-sm font-semibold text-pink-900/60 fade-in">No kisses yet. Send the first one.</div>` :
+    list.map(([id,k])=>{
+      const from = (S.room.profiles||{})[k.from];
+      const mine = k.from===S.profileId;
+      const t = KISS_TYPES.find(x=>x.id===k.type)||KISS_TYPES[0];
+      return `<div class="glass p-4 flex items-center gap-3 fade-in">
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0" style="background:linear-gradient(135deg,#ff6b9d,#c86dd7)">
+          <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-sm">${esc(from?from.name:'Someone')} sent a ${t.label.toLowerCase()}</div>
+          ${k.note?`<div class="text-xs text-pink-900/60 italic truncate">"${esc(k.note)}"</div>`:''}
+          <div class="text-[11px] text-pink-900/50 font-medium">${timeAgo(k.at)}${k.ack?' · acknowledged':''}</div>
+        </div>
+        ${!mine && !k.ack ? `<button onclick="ackKiss('${id}')" class="btn-ghost px-3 py-2 text-xs shrink-0">Ack</button>` : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+let pickedKissType='kiss';
+function pickKissType(id){
+  pickedKissType=id;
+  $$('.kt-btn').forEach(b=>{
+    const on = b.dataset.kt===id;
+    b.classList.toggle('!bg-pink-500',on); b.classList.toggle('!text-white',on); b.classList.toggle('!border-transparent',on);
+  });
+}
+async function sendKiss(){
+  const note = $('#kissNote').value.trim();
+  const partner = partnerProfile();
+  await S.adapter.write(room=>{
+    const id = S.adapter.key();
+    room.kisses[id] = { from:S.profileId, to: partner?partner.id:null, type:pickedKissType, note, at:Date.now(), ack:false };
+  });
+  toast('Sent with love');
+}
+async function quickKiss(){
+  await S.adapter.write(room=>{
+    const id = S.adapter.key();
+    const partner = partnerProfile();
+    room.kisses[id] = { from:S.profileId, to: partner?partner.id:null, type:'kiss', note:'', at:Date.now(), ack:false };
+  });
+  toast('Kiss sent');
+}
+async function ackKiss(id){
+  await S.adapter.write(room=>{ if(room.kisses[id]) room.kisses[id].ack=true; });
+  toast('Acknowledged');
+}
+
+function viewQuiz(){
+  const list = Object.entries(S.room.quizzes||{}).sort((a,b)=>b[1].at-a[1].at);
+  return `
+  ${sectionTitle('Couple Quiz','How well do you really know each other?')}
+  <button onclick="openQuizBuilder()" class="btn-primary w-full py-3.5 mb-4 fade-in">Create a new quiz</button>
+  <div class="space-y-3">
+    ${list.length===0?`<div class="glass p-6 text-center text-sm font-semibold text-pink-900/60 fade-in">No quizzes yet. Make one for your partner.</div>`:
+    list.map(([id,q])=>{
+      const by = (S.room.profiles||{})[q.by];
+      const myResp = (q.responses||{})[S.profileId];
+      const pResp = partnerProfile() && (q.responses||{})[partnerProfile().id];
+      return `<div class="glass p-4 fade-in">
+        <div class="font-bold">${esc(q.title)}</div>
+        <div class="text-xs text-pink-900/60 font-medium mb-3">by ${esc(by?by.name:'?')} · ${q.questions.length} questions</div>
+        <div class="flex gap-2 flex-wrap">
+          ${myResp?`<span class="chip">You: ${myResp.score}/${q.questions.length}</span>`:`<button onclick="openQuizTaker('${id}')" class="btn-primary px-4 py-2 text-xs">Take quiz</button>`}
+          ${pResp?`<span class="chip">${esc(partnerProfile().name.split(' ')[0])}: ${pResp.score}/${q.questions.length}</span>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+let builderQuestions=[];
+function openQuizBuilder(){
+  builderQuestions=[{q:'',options:['','','',''],answer:0}];
+  openModal(`
+    <h3 class="font-extrabold text-lg mb-1">New quiz</h3>
+    <p class="text-xs text-pink-900/60 font-medium mb-4">Write questions about yourselves. Your partner answers them.</p>
+    <input id="quizTitle" class="field mb-3" maxlength="50" placeholder="Quiz title, e.g. How well do you know me?">
+    <div id="builderQs" class="space-y-4"></div>
+    <button onclick="addBuilderQ()" class="btn-ghost w-full py-2.5 text-sm mt-3">+ Add question</button>
+    <button onclick="saveQuiz()" class="btn-primary w-full py-3.5 mt-4">Publish quiz</button>`);
+  renderBuilderQs();
+}
+function renderBuilderQs(){
+  $('#builderQs').innerHTML = builderQuestions.map((bq,qi)=>`
+    <div class="bg-white/40 rounded-2xl p-3 border border-white/60">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-extrabold text-pink-700">QUESTION ${qi+1}</span>
+        ${builderQuestions.length>1?`<button onclick="builderQuestions.splice(${qi},1);renderBuilderQs()" class="text-xs font-bold text-red-500">Remove</button>`:''}
+      </div>
+      <input class="field mb-2 !py-2 text-sm" placeholder="Your question..." value="${esc(bq.q)}" oninput="builderQuestions[${qi}].q=this.value">
+      ${bq.options.map((op,oi)=>`
+        <div class="flex items-center gap-2 mb-1.5">
+          <button onclick="builderQuestions[${qi}].answer=${oi};renderBuilderQs()" class="w-6 h-6 rounded-full border-2 shrink-0 ${bq.answer===oi?'bg-pink-500 border-pink-500':'border-pink-300'}" title="Mark as correct"></button>
+          <input class="field !py-2 text-sm" placeholder="Option ${oi+1}" value="${esc(op)}" oninput="builderQuestions[${qi}].options[${oi}]=this.value">
+        </div>`).join('')}
+      <p class="text-[10px] text-pink-900/50 font-medium mt-1">Tap the circle to mark the correct answer.</p>
+    </div>`).join('');
+}
+function addBuilderQ(){ builderQuestions.push({q:'',options:['','','',''],answer:0}); renderBuilderQs(); }
+async function saveQuiz(){
+  const title = $('#quizTitle').value.trim();
+  if(!title){ toast('Give your quiz a title'); return; }
+  const clean = builderQuestions.filter(bq=>bq.q.trim() && bq.options.every(o=>o.trim()));
+  if(clean.length===0){ toast('Add at least one complete question'); return; }
+  await S.adapter.write(room=>{
+    const id = S.adapter.key();
+    room.quizzes[id] = { title, by:S.profileId, at:Date.now(), questions:clean, responses:{} };
+  });
+  closeModal(); toast('Quiz published');
+}
+let takerAnswers={}, takerId=null;
+function openQuizTaker(id){
+  const q = (S.room.quizzes||{})[id];
+  if(!q) return;
+  takerId=id; takerAnswers={};
+  openModal(`
+    <h3 class="font-extrabold text-lg mb-1">${esc(q.title)}</h3>
+    <p class="text-xs text-pink-900/60 font-medium mb-4">Answer honestly. No pressure.</p>
+    <div class="space-y-5" id="takerBody">
+      ${q.questions.map((qq,qi)=>`
+        <div>
+          <div class="font-bold text-sm mb-2">${qi+1}. ${esc(qq.q)}</div>
+          <div class="grid grid-cols-1 gap-2">
+            ${qq.options.map((op,oi)=>`<button onclick="takerPick(${qi},${oi})" data-q="${qi}" data-o="${oi}" class="opt-btn btn-ghost py-2.5 px-4 text-sm text-left">${esc(op)}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    <button onclick="submitQuiz()" class="btn-primary w-full py-3.5 mt-5">Submit answers</button>`);
+}
+function takerPick(qi,oi){
+  takerAnswers[qi]=oi;
+  $$(`#takerBody [data-q="${qi}"]`).forEach(b=>b.classList.toggle('picked', +b.dataset.o===oi));
+}
+async function submitQuiz(){
+  const q = (S.room.quizzes||{})[takerId];
+  if(!q) return;
+  if(Object.keys(takerAnswers).length < q.questions.length){ toast('Answer every question first'); return; }
+  let score=0;
+  q.questions.forEach((qq,qi)=>{ if(takerAnswers[qi]===qq.answer) score++; });
+  await S.adapter.write(room=>{
+    room.quizzes[takerId].responses = room.quizzes[takerId].responses||{};
+    room.quizzes[takerId].responses[S.profileId] = { answers:takerAnswers, score, at:Date.now() };
+  });
+  closeModal();
+  const total=q.questions.length;
+  openModal(`<div class="text-center py-6">
+    <div class="text-6xl font-extrabold text-pink-600">${score}/${total}</div>
+    <p class="font-bold mt-2">${score===total?'Perfect. You really know them.':score>=total/2?'Not bad at all.':'Room to grow, lover.'}</p>
+    <button onclick="closeModal()" class="btn-primary px-8 py-3 mt-5">Done</button></div>`);
+}
+
+function viewInvoices(){
+  const list = Object.entries(S.room.invoices||{}).sort((a,b)=>b[1].at-a[1].at);
+  const open = list.filter(([id,i])=>i.status==='open');
+  const settled = list.filter(([id,i])=>i.status!=='open');
+  const invCard = ([id,i])=>{
+    const from=(S.room.profiles||{})[i.from]; const to=(S.room.profiles||{})[i.to];
+    const total=(i.items||[]).reduce((s,it)=>s+(+it.amount||0),0);
+    const iOwe = i.to===S.profileId && i.status==='open';
+    return `<div class="glass p-4 fade-in">
+      <div class="flex items-start justify-between mb-1">
+        <div class="font-bold">${esc(i.title)}</div>
+        ${i.status==='open'?'<span class="chip !bg-pink-500 !text-white !border-transparent">OPEN</span>':'<span class="chip">SETTLED</span>'}
+      </div>
+      <div class="text-xs text-pink-900/60 font-medium mb-3">${esc(from?from.name:'?')} → ${esc(to?to.name:'?')} · ${timeAgo(i.at)}</div>
+      <div class="bg-white/40 rounded-2xl border border-white/60 divide-y divide-white/50 mb-3">
+        ${(i.items||[]).map(it=>`<div class="flex justify-between px-4 py-2.5 text-sm"><span class="font-medium">${esc(it.desc)}</span><span class="font-extrabold text-pink-600">${it.amount} <span class="text-[10px]">KISS</span></span></div>`).join('')}
+        <div class="flex justify-between px-4 py-2.5 text-sm font-extrabold"><span>Total</span><span class="text-pink-600">${total} KISS</span></div>
+      </div>
+      ${iOwe?`<button onclick="settleInvoice('${id}')" class="btn-primary w-full py-3 text-sm">Settle this invoice</button>`:''}
+    </div>`;
+  };
+  return `
+  ${sectionTitle('Arbwr Invoices','The official currency is affection.')}
+  <button onclick="openInvoiceBuilder()" class="btn-primary w-full py-3.5 mb-4 fade-in">Send an invoice</button>
+  ${open.length?`<p class="text-xs font-extrabold text-pink-700 tracking-wide mb-2">OPEN</p><div class="space-y-3 mb-5">${open.map(invCard).join('')}</div>`:''}
+  ${settled.length?`<p class="text-xs font-extrabold text-pink-900/50 tracking-wide mb-2">SETTLED</p><div class="space-y-3 opacity-80">${settled.map(invCard).join('')}</div>`:''}
+  ${list.length===0?`<div class="glass p-6 text-center text-sm font-semibold text-pink-900/60 fade-in">No invoices yet. Bill your partner for that favor.</div>`:''}`;
+}
+let invItems=[{desc:'',amount:''}];
+function openInvoiceBuilder(){
+  const partner = partnerProfile();
+  invItems=[{desc:'',amount:''}];
+  openModal(`
+    <h3 class="font-extrabold text-lg mb-1">New Arbwr Invoice</h3>
+    <p class="text-xs text-pink-900/60 font-medium mb-4">Bill your partner in kisses. ${partner?'To: <b>'+esc(partner.name)+'</b>':'They will see it once they join.'}</p>
+    <input id="invTitle" class="field mb-3" maxlength="50" placeholder="Invoice title, e.g. Movie night debt">
+    <div id="invItems" class="space-y-2"></div>
+    <button onclick="invItems.push({desc:'',amount:''});renderInvItems()" class="btn-ghost w-full py-2.5 text-sm mt-3">+ Add line item</button>
+    <button onclick="saveInvoice()" class="btn-primary w-full py-3.5 mt-4">Send invoice</button>`);
+  renderInvItems();
+}
+function renderInvItems(){
+  $('#invItems').innerHTML = invItems.map((it,i)=>`
+    <div class="flex gap-2">
+      <input class="field !py-2 text-sm flex-1" placeholder="What for?" value="${esc(it.desc)}" oninput="invItems[${i}].desc=this.value">
+      <input class="field !py-2 text-sm w-24" type="number" min="1" placeholder="KISS" value="${esc(it.amount)}" oninput="invItems[${i}].amount=this.value">
+      ${invItems.length>1?`<button onclick="invItems.splice(${i},1);renderInvItems()" class="text-red-500 font-bold px-1">×</button>`:''}
+    </div>`).join('');
+}
+async function saveInvoice(){
+  const title = $('#invTitle').value.trim();
+  const partner = partnerProfile();
+  const items = invItems.filter(it=>it.desc.trim() && +it.amount>0);
+  if(!title){ toast('Give the invoice a title'); return; }
+  if(items.length===0){ toast('Add at least one line item'); return; }
+  await S.adapter.write(room=>{
+    const id = S.adapter.key();
+    room.invoices[id] = { from:S.profileId, to: partner?partner.id:S.profileId, title, items:items.map(it=>({desc:it.desc.trim(),amount:+it.amount})), status:'open', at:Date.now() };
+  });
+  closeModal(); toast('Invoice sent');
+}
+async function settleInvoice(id){
+  await S.adapter.write(room=>{ if(room.invoices[id]){ room.invoices[id].status='settled'; room.invoices[id].settledAt=Date.now(); } });
+  toast('Settled. Debt paid in full');
+}
+
+function viewProfile(){
+  const me = myProfile();
+  const partner = partnerProfile();
+  return `
+  ${sectionTitle('Profile','Make it yours.')}
+  <div class="glass-deep p-5 mb-4 fade-in">
+    <div class="flex items-center gap-4 mb-4">
+      ${avatarHTML(me,64)}
+      <div><div class="font-extrabold text-lg">${esc(me.name)}</div><div class="text-xs text-pink-900/60 font-medium">${esc(me.bio||'No bio yet')}</div></div>
+    </div>
+    <label class="text-xs font-bold text-pink-900/60">NAME</label>
+    <input id="editName" class="field mt-1 mb-3" maxlength="24" value="${esc(me.name)}">
+    <label class="text-xs font-bold text-pink-900/60">COLOR</label>
+    <div class="flex gap-3 mt-2 mb-3 justify-center" id="editColorRow">
+      ${COLORS.map((c,i)=>`<button onclick="editPickColor(${i})" class="w-10 h-10 rounded-full border-4" data-ec="${i}" style="background:linear-gradient(135deg,${c[0]},${c[1]});border-color:${i===(me.color||0)?'#fff':'transparent'};${i===(me.color||0)?'box-shadow:0 0 0 3px #ff6b9d':''}"></button>`).join('')}
+    </div>
+    <label class="text-xs font-bold text-pink-900/60">BIO</label>
+    <input id="editBio" class="field mt-1" maxlength="80" value="${esc(me.bio||'')}" placeholder="A line about you...">
+    <button onclick="saveMyProfile()" class="btn-primary w-full py-3 mt-4 text-sm">Save changes</button>
+  </div>
+  <div class="glass p-5 mb-4 fade-in">
+    <h3 class="font-bold mb-2">Couple</h3>
+    ${partner?`<div class="flex items-center gap-3">${avatarHTML({name:partner.name,color:partner.color},44)}<div><div class="font-bold text-sm">${esc(partner.name)}</div><div class="text-xs text-pink-900/60">${esc(partner.bio||'')}</div></div></div>`
+    :`<p class="text-sm text-pink-900/60 font-medium mb-3">Your partner hasn't joined yet. Share your code:</p>
+      <div class="flex items-center justify-center gap-2"><span class="text-2xl font-extrabold tracking-[.25em] text-pink-600">${S.roomCode}</span><button onclick="copyRoomCode()" class="btn-ghost px-3 py-2 text-xs">Copy</button></div>`}
+  </div>
+  <div class="glass p-5 fade-in">
+    <h3 class="font-bold mb-3">App</h3>
+    <div class="flex flex-col gap-2">
+      <button onclick="switchRoom()" class="btn-ghost w-full py-3 text-sm">Use a different couple code</button>
+      <button onclick="resetAll()" class="w-full py-3 text-sm font-bold text-red-500">Reset all data</button>
+    </div>
+    <p class="text-[11px] text-pink-900/50 mt-3 text-center">${S.adapter.mode==='firebase'?'Synced with your Firebase cloud.':'Demo mode — data stays on this phone.'}</p>
+  </div>`;
+}
+let editColorIdx = null;
+function editPickColor(i){
+  editColorIdx=i;
+  $$('#editColorRow [data-ec]').forEach(b=>{
+    const on=+b.dataset.ec===i;
+    b.style.borderColor=on?'#fff':'transparent';
+    b.style.boxShadow=on?'0 0 0 3px #ff6b9d':'none';
+  });
+}
+async function saveMyProfile(){
+  const name=$('#editName').value.trim(); if(!name){toast('Name cannot be empty');return;}
+  const bio=$('#editBio').value.trim();
+  const color = editColorIdx!==null?editColorIdx:(myProfile().color||0);
+  await S.adapter.write(room=>{ room.profiles[S.profileId]={...room.profiles[S.profileId], name, bio, color}; });
+  editColorIdx=null; toast('Profile updated');
+}
+function switchRoom(){
+  localStorage.removeItem('arbwr_room_code');
+  const map=JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
+  showView('view-link');
+}
+async function resetAll(){
+  if(!confirm('Delete everything in this couple space? This cannot be undone.')) return;
+  await S.adapter.write(room=>{
+    room.kisses={}; room.checkins={}; room.quizzes={}; room.invoices={};
+  });
+  toast('Fresh start');
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
