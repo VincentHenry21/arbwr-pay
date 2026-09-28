@@ -150,12 +150,12 @@
   <section id="view-link" class="hidden px-5 pt-14">
     <div class="text-center mb-6 fade-in">
       <h1 class="text-2xl font-extrabold text-white drop-shadow-lg">Link your partner</h1>
-      <p class="text-pink-900/70 font-medium mt-1 text-sm" id="linkModeNote">Create a code and share it, or join with theirs.</p>
+      <p class="text-pink-900/70 font-medium mt-1 text-sm" id="linkModeNote">Create a code and share it, or join with theirs.</p>       <div class="mt-2"><span id="connPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/50 text-pink-900/70">…</span></div>
     </div>
     <div class="glass p-5 mb-4 fade-in">
       <h2 class="font-bold mb-2">Create a couple code</h2>
       <p class="text-sm text-pink-900/70 mb-4">Generate a code and send it to your partner.</p>
-      <button onclick="createRoom()" class="btn-primary w-full py-3.5 text-[15px]">Generate my code</button>
+      <button onclick="createRoom()" class="btn-primary w-full py-3.5 text-[15px]">Generate my code</button> <div id="demoWarn" class="hidden mt-4 rounded-2xl border border-amber-300 bg-amber-50/80 p-4 text-left"> <p class="text-sm font-semibold text-amber-800">⚠️ You're in phone-only mode.</p> <p class="text-xs text-amber-700 mt-1">Codes generated here live only on this phone — your partner can never join them. Connect to the shared cloud first, then generate a fresh code.</p> <button onclick="reconnectShared()" class="btn-primary w-full py-3 mt-3 text-sm">Connect to shared cloud</button> </div>
       <div id="createdCodeWrap" class="hidden mt-4 text-center">
         <p class="text-xs font-semibold text-pink-900/60 mb-1">YOUR COUPLE CODE</p>
         <div class="flex items-center justify-center gap-2">
@@ -311,7 +311,7 @@ const S = {
   room:{ profiles:{}, kisses:{}, checkins:{}, quizzes:{}, invoices:{} },
   tab:'home',
 };
-function showView(id){
+function showView(id){ if(id==='view-link') renderLinkStatus();
   ['view-setup','view-link','view-profile','view-app'].forEach(v => $('#'+v).classList.toggle('hidden', v!==id));
   window.scrollTo(0,0);
 }
@@ -393,14 +393,14 @@ async function boot(){
   else showView('view-link');
 }
 
-/* ---------------- Linking ---------------- */
+/* ---------------- Linking ---------------- */ function isDemo(){ return !!(S.adapter && S.adapter.mode==='demo'); } function renderLinkStatus(){ const pill = $('#connPill'); if(!pill) return; const demo = isDemo(); pill.innerHTML = demo ? '<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span> Phone-only mode — partner can’ join' : '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Shared cloud — partner can join'; pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ' + (demo ? 'bg-amber-100/90 text-amber-800' : 'bg-emerald-100/90 text-emerald-800'); const w = $('#demoWarn'); if(w) w.classList.toggle('hidden', !demo); } async function reconnectShared(){ if(!window.FIREBASE_PRESET){ backToSetup(); return; } toast('Connecting to the shared cloud…'); localStorage.removeItem('arbwr_mode'); localStorage.removeItem('arbwr_fb_config'); localStorage.removeItem('arbwr_room_code'); $('#firebaseConfigInput').value = JSON.stringify(window.FIREBASE_PRESET); await connectFirebase(); renderLinkStatus(); }
 function genCode(){
   const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let c=''; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
   return c;
 }
 async function createRoom(){
-  const code = genCode();
+  if(isDemo()){ renderLinkStatus(); const w = $('#demoWarn'); w.classList.remove('hidden'); w.scrollIntoView({behavior:'smooth', block:'center'}); toast('Connect to the shared cloud first'); return; } const code = genCode();
   try{ await S.adapter.ensureRoom(code); }
   catch(e){ toast('Could not create a code: ' + (e && e.message ? e.message : e)); return; }
   $('#createdCode').textContent = code;
@@ -418,7 +418,7 @@ async function joinRoom(){
   let ok = false;
   try{ ok = await S.adapter.roomExists(code); }
   catch(e){ err.textContent='Could not check the code: ' + (e && e.message ? e.message : e); err.classList.remove('hidden'); return; }
-  if(!ok){ err.textContent='No couple found with that code. Check it and try again.'; err.classList.remove('hidden'); return; }
+  if(!ok){ err.textContent='No couple found with that code. Check the code, and make sure your partner generated it while on the shared cloud (green pill) — codes made in phone-only mode can’t be joined.'; err.classList.remove('hidden'); return; }
   enterRoom(code);
 }
 async function enterRoom(code, silent){
