@@ -247,7 +247,7 @@ window.FIREBASE_PRESET = {"apiKey":"AIzaSyBOS6A_nU1Rkbpu0Ia1kKQWvK2WV24GZ7E","au
 /* =====================================================================
    ARBWR PAY — couple's affection app
    ===================================================================== */
-const $ = s => document.querySelector(s);
+(function(){var mem={};var usable=true;try{localStorage.getItem('__arbwr_t');}catch(e){usable=false;}if(usable)return;var wrap={getItem:function(k){return Object.prototype.hasOwnProperty.call(mem,k)?mem[k]:null;},setItem:function(k,v){mem[k]=String(v);},removeItem:function(k){delete mem[k];},clear:function(){for(var k in mem)delete mem[k];},key:function(i){return Object.keys(mem)[i]||null;}};Object.defineProperty(wrap,'length',{get:function(){return Object.keys(mem).length;}});try{Object.defineProperty(window,'localStorage',{value:wrap,configurable:true,writable:true});}catch(e){}})(); const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => new Date().toISOString().slice(0,10);
@@ -393,7 +393,7 @@ async function boot(){
   else showView('view-link');
 }
 
-/* ---------------- Linking ---------------- */ function isDemo(){ return !!(S.adapter && S.adapter.mode==='demo'); } function renderLinkStatus(){ const pill = $('#connPill'); if(!pill) return; const demo = isDemo(); pill.innerHTML = demo ? '<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span> Phone-only mode — partner can’ join' : '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Shared cloud — partner can join'; pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ' + (demo ? 'bg-amber-100/90 text-amber-800' : 'bg-emerald-100/90 text-emerald-800'); const w = $('#demoWarn'); if(w) w.classList.toggle('hidden', !demo); } async function reconnectShared(){ if(!window.FIREBASE_PRESET){ backToSetup(); return; } toast('Connecting to the shared cloud…'); localStorage.removeItem('arbwr_mode'); localStorage.removeItem('arbwr_fb_config'); localStorage.removeItem('arbwr_room_code'); $('#firebaseConfigInput').value = JSON.stringify(window.FIREBASE_PRESET); await connectFirebase(); renderLinkStatus(); }
+/* ---------------- Linking ---------------- */ function isDemo(){ return !!(S.adapter && S.adapter.mode==='demo'); } function renderLinkStatus(){ const pill = $('#connPill'); if(!pill) return; const demo = isDemo(); pill.innerHTML = demo ? '<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span> Phone-only mode — partner can’t join' : '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Shared cloud — partner can join'; pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ' + (demo ? 'bg-amber-100/90 text-amber-800' : 'bg-emerald-100/90 text-emerald-800'); const w = $('#demoWarn'); if(w) w.classList.toggle('hidden', !demo); } async function reconnectShared(){ if(!window.FIREBASE_PRESET){ backToSetup(); return; } toast('Connecting to the shared cloud…'); localStorage.removeItem('arbwr_mode'); localStorage.removeItem('arbwr_fb_config'); localStorage.removeItem('arbwr_room_code'); $('#firebaseConfigInput').value = JSON.stringify(window.FIREBASE_PRESET); await connectFirebase(); renderLinkStatus(); }
 function genCode(){
   const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let c=''; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
@@ -875,7 +875,7 @@ async function resetAll(){
   toast('Fresh start');
 }
 
-document.addEventListener('DOMContentLoaded', boot);
+document.addEventListener('DOMContentLoaded', function(){ boot().catch(function(e){ try{ showView('view-setup'); var el=$('#setupError'); if(el){ el.textContent='Startup hiccup — please reload. ('+((e&&e.message)?e.message:e)+')'; el.classList.remove('hidden'); } }catch(_){} }); });
 </script>
 
 <script>
