@@ -1,6 +1,6 @@
 /* Arbwr Pay service worker — caches the app shell so the app opens fast
    and survives flaky connections. Firebase data still needs network. */
-const CACHE = 'arbwr-pay-v4';
+const CACHE = 'arbwr-pay-v5';
 const ASSETS = [
   './',
   './index.html',
