@@ -334,7 +334,7 @@ async function connectFirebase(){
   const raw = $('#firebaseConfigInput').value.trim();
   const err = $('#setupError'), status = $('#setupStatus'), retry = $('#retryBtn'), btn = $('#connectBtn');
   err.classList.add('hidden'); status.classList.add('hidden'); retry.classList.add('hidden'); btn.classList.remove('hidden');
-  const fail = msg => { err.textContent = msg; err.classList.remove('hidden'); status.classList.add('hidden'); retry.classList.remove('hidden'); btn.classList.add('hidden'); };
+  const fail = msg => { showView('view-setup'); err.textContent = msg; err.classList.remove('hidden'); status.classList.add('hidden'); retry.classList.remove('hidden'); btn.classList.add('hidden'); };
   let cfg;
   try {
     let cleaned = raw.replace(/^\s*(const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '');
@@ -426,7 +426,7 @@ async function enterRoom(code, silent){
     S.roomCode = code;
     localStorage.setItem('arbwr_room_code', code);
     await S.adapter.ensureRoom(code);
-  }catch(e){ toast('Could not open the room: ' + (e && e.message ? e.message : e)); return; }
+  }catch(e){ try{ localStorage.removeItem('arbwr_room_code'); }catch(_){} showView('view-link'); toast('Could not open the room: ' + (e && e.message ? e.message : e)); return; }
   const map = JSON.parse(localStorage.getItem('arbwr_profile_map')||'{}');
   S.profileId = map[code] || null;
   S.adapter.subscribe(room => { S.room = room; renderApp(); });
